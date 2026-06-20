@@ -978,3 +978,178 @@ input[type=number] { -moz-appearance: textfield; }
 /* ── Missing layout helpers ────────────────────────────────────────────────── */
 .score-player-info { display: flex; flex-direction: column; gap: 4px; }
 .player-details { display: flex; flex-direction: column; gap: 2px; }
+
+/* ── Scoreboard row entrance animation ─────────────────────────────────────── */
+@keyframes rowEnter {
+  from { opacity: 0; transform: translateX(-10px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.score-row-enter {
+  animation: rowEnter 250ms ease both;
+}
+
+/* ── Score delta badge ─────────────────────────────────────────────────────── */
+@keyframes deltaFloat {
+  0%   { opacity: 1; transform: translateY(0) scale(1); }
+  60%  { opacity: 1; transform: translateY(-20px) scale(1.1); }
+  100% { opacity: 0; transform: translateY(-36px) scale(0.9); }
+}
+
+.score-delta {
+  position: absolute;
+  top: -6px;
+  right: -4px;
+  font-size: 0.9rem;
+  font-weight: 800;
+  pointer-events: none;
+  animation: deltaFloat 1.2s ease forwards;
+  white-space: nowrap;
+}
+
+.score-delta--pos { color: var(--accent-2); }
+.score-delta--neg { color: var(--accent-3); }
+
+/* ── Submit button confirm pulse ───────────────────────────────────────────── */
+@keyframes confirmPulse {
+  0%   { transform: scale(1);    background: var(--accent); }
+  40%  { transform: scale(1.04); background: var(--accent-3); }
+  100% { transform: scale(1);    background: var(--accent); }
+}
+
+.btn--confirm-pulse {
+  animation: confirmPulse 400ms ease forwards;
+}
+
+/* ── Per-player stepper rows ───────────────────────────────────────────────── */
+.stepper-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stepper-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 4px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  transition: background var(--transition), border-color var(--transition);
+}
+
+.stepper-row--positive {
+  background: rgba(232, 83, 74, 0.08);
+  border-color: rgba(232, 83, 74, 0.3);
+}
+
+.stepper-row--negative {
+  background: rgba(74, 222, 128, 0.08);
+  border-color: rgba(74, 222, 128, 0.3);
+}
+
+.stepper-player {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.stepper-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+.stepper-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stepper-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.stepper-btn {
+  width: 36px;
+  height: 36px;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 1.3rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--transition), transform 100ms ease;
+  flex-shrink: 0;
+}
+
+.stepper-btn:active { transform: scale(0.9); }
+.stepper-btn--minus:hover { background: rgba(232,83,74,0.2); }
+.stepper-btn--plus:hover  { background: rgba(74,222,128,0.2); }
+
+.stepper-input {
+  width: 58px;
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: var(--radius-sm);
+  padding: 0 4px;
+  font-size: 1.2rem;
+  font-weight: 700;
+  height: 36px;
+  text-align: center;
+  outline: none;
+  transition: border-color var(--transition);
+}
+
+.stepper-input:focus { border-color: var(--accent); }
+
+/* ── Pelt overlay particles ────────────────────────────────────────────────── */
+@keyframes peltParticle {
+  0%   { opacity: 1; transform: translate(0,0) scale(1); }
+  100% { opacity: 0; transform: var(--tx, 60px) var(--ty, -60px) scale(0); }
+}
+
+.pelt-overlay::before,
+.pelt-overlay::after {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.6);
+  --tx: translateX(80px);
+  --ty: translateY(-80px);
+  animation: peltParticle 600ms ease-out 300ms both;
+  top: 40%;
+  left: 30%;
+}
+
+.pelt-overlay::after {
+  width: 8px;
+  height: 8px;
+  left: 65%;
+  top: 55%;
+  --tx: translateX(-70px);
+  --ty: translateY(-90px);
+  animation-delay: 400ms;
+}

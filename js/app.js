@@ -28,12 +28,13 @@ export function startSession(gameId, playerIds) {
   navigate('scoreboard');
 }
 
-export async function submitRound(entries) {
+export async function submitRound(entries, prevScores) {
   if (!activeSession) return;
 
   const game = data.getGames().find(g => g.id === activeSession.gameId);
   if (!game) return;
 
+  const snapshotScores = prevScores ?? { ...activeSession.scores };
   const { scores, pelted } = logic.applyRoundEntry(activeSession.scores, entries, game);
   activeSession.scores = scores;
   activeSession.rounds.push({ entries });
@@ -50,7 +51,7 @@ export async function submitRound(entries) {
   if (losers.length > 0) {
     navigate('end', { losers });
   } else {
-    navigate('scoreboard');
+    navigate('scoreboard', { prevScores: snapshotScores });
   }
 }
 
