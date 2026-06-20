@@ -515,6 +515,7 @@ h3 { font-size: 1.1rem; font-weight: 600; }
   transition: border-color var(--transition), background var(--transition);
   text-align: left;
   width: 100%;
+  color: var(--text);
 }
 
 .game-card--selected {
@@ -559,6 +560,7 @@ h3 { font-size: 1.1rem; font-weight: 600; }
   transition: border-color var(--transition), background var(--transition);
   width: 100%;
   text-align: left;
+  color: var(--text);
 }
 
 .player-select-row--selected {
