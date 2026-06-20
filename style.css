@@ -64,8 +64,13 @@ body::before {
   margin: 0 auto;
   padding: 0 16px 32px;
   overflow-y: auto;
+  scrollbar-width: none;
   position: relative;
   z-index: 1;
+}
+
+#app::-webkit-scrollbar {
+  display: none;
 }
 
 /* ── Screen transitions ────────────────────────────────────────────────────── */
@@ -1737,9 +1742,9 @@ input[type=number] { -moz-appearance: textfield; }
 /* ── Home card stage animation ─────────────────────────────────────────────── */
 .card-stage {
   position: relative;
-  height: 108px;
+  height: 140px;
   margin: 0 auto 24px;
-  width: 200px;
+  width: 260px;
 }
 
 .fc {
@@ -1752,7 +1757,10 @@ input[type=number] { -moz-appearance: textfield; }
   flex-direction: column;
   justify-content: space-between;
   padding: 5px 6px;
-  transform-origin: bottom center;
+  transform-origin: 50% 280%;
+  left: 50%;
+  margin-left: -28px;
+  top: 10px;
   user-select: none;
 }
 
@@ -1763,13 +1771,15 @@ input[type=number] { -moz-appearance: textfield; }
 .fc-red { color: #c0392b; }
 .fc-blk { color: #1a1a1a; }
 
-.fc:nth-child(1) { left: 0px;   top: 18px; transform: rotate(-18deg); animation: cf1 3.2s ease-in-out infinite; }
-.fc:nth-child(2) { left: 36px;  top: 6px;  transform: rotate(-8deg);  animation: cf2 3.2s ease-in-out infinite 0.25s; }
-.fc:nth-child(3) { left: 72px;  top: 2px;  transform: rotate(0deg);   animation: cf3 3.2s ease-in-out infinite 0.5s; }
-.fc:nth-child(4) { left: 108px; top: 6px;  transform: rotate(8deg);   animation: cf2 3.2s ease-in-out infinite 0.75s; }
-.fc:nth-child(5) { left: 144px; top: 18px; transform: rotate(18deg);  animation: cf1 3.2s ease-in-out infinite 1s; }
+.fc:nth-child(1) { transform: rotate(-24deg); animation: cf1 3.2s ease-in-out infinite; }
+.fc:nth-child(2) { transform: rotate(-12deg); animation: cf2 3.2s ease-in-out infinite 0.25s; }
+.fc:nth-child(3) { transform: rotate(0deg);   animation: cf3 3.2s ease-in-out infinite 0.5s; }
+.fc:nth-child(4) { transform: rotate(12deg);  animation: cf4 3.2s ease-in-out infinite 0.75s; }
+.fc:nth-child(5) { transform: rotate(24deg);  animation: cf5 3.2s ease-in-out infinite 1s; }
 
-@keyframes cf1 { 0%,100% { transform: rotate(-18deg) translateY(0); } 50% { transform: rotate(-16deg) translateY(-7px); } }
-@keyframes cf2 { 0%,100% { transform: rotate(-8deg) translateY(0); }  50% { transform: rotate(-6deg) translateY(-9px); } }
-@keyframes cf3 { 0%,100% { transform: rotate(0deg) translateY(0); }   50% { transform: rotate(1deg) translateY(-11px); } }
+@keyframes cf1 { 0%,100% { transform: rotate(-24deg) translateY(0); } 50% { transform: rotate(-22deg) translateY(-6px); } }
+@keyframes cf2 { 0%,100% { transform: rotate(-12deg) translateY(0); } 50% { transform: rotate(-10deg) translateY(-8px); } }
+@keyframes cf3 { 0%,100% { transform: rotate(0deg) translateY(0); }   50% { transform: rotate(1deg) translateY(-10px); } }
+@keyframes cf4 { 0%,100% { transform: rotate(12deg) translateY(0); }  50% { transform: rotate(10deg) translateY(-8px); } }
+@keyframes cf5 { 0%,100% { transform: rotate(24deg) translateY(0); }  50% { transform: rotate(22deg) translateY(-6px); } }
 
