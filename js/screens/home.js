@@ -13,6 +13,37 @@ function renderHome({ app }) {
 
   const screen = el('div', { class: 'screen home-screen' });
 
+  // Card stage animation
+  const cardStage = el('div', { class: 'card-stage' });
+  cardStage.innerHTML = `
+    <div class="fc">
+      <div class="fc-corner fc-blk"><span>7</span><span class="suit">♣</span></div>
+      <div class="fc-center fc-blk">♣</div>
+      <div class="fc-corner fc-corner-br fc-blk"><span>7</span><span class="suit">♣</span></div>
+    </div>
+    <div class="fc">
+      <div class="fc-corner fc-red"><span>Q</span><span class="suit">♥</span></div>
+      <div class="fc-center fc-red">♥</div>
+      <div class="fc-corner fc-corner-br fc-red"><span>Q</span><span class="suit">♥</span></div>
+    </div>
+    <div class="fc">
+      <div class="fc-corner fc-blk"><span>A</span><span class="suit">♠</span></div>
+      <div class="fc-center fc-blk" style="font-size:26px">♠</div>
+      <div class="fc-corner fc-corner-br fc-blk"><span>A</span><span class="suit">♠</span></div>
+    </div>
+    <div class="fc">
+      <div class="fc-corner fc-red"><span>K</span><span class="suit">♦</span></div>
+      <div class="fc-center fc-red">♦</div>
+      <div class="fc-corner fc-corner-br fc-red"><span>K</span><span class="suit">♦</span></div>
+    </div>
+    <div class="fc">
+      <div class="fc-corner fc-blk"><span>J</span><span class="suit">♣</span></div>
+      <div class="fc-center fc-blk">♣</div>
+      <div class="fc-corner fc-corner-br fc-blk"><span>J</span><span class="suit">♣</span></div>
+    </div>
+  `;
+  screen.appendChild(cardStage);
+
   // Header
   screen.appendChild(el('div', { class: 'home-header' },
     el('div', { class: 'home-logo' }, '🃏'),
