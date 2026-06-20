@@ -58,5 +58,13 @@ export function seedDefaultData() {
       maxPointsPerRound: null,
       allowNegativePoints: true,
     }]);
+  } else {
+    // Migreer bestaande Toepen game als verliesgrens nog op 50 staat
+    const updated = games.map(g =>
+      g.id === 'g_toepen' && g.losingScore === 50
+        ? { ...g, losingScore: 15 }
+        : g
+    );
+    if (updated.some((g, i) => g !== games[i])) saveGames(updated);
   }
 }
