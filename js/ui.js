@@ -56,6 +56,15 @@ export function showPeltAnimation(playerName) {
   });
 }
 
+export function showDelta(anchorEl, delta) {
+  const badge = document.createElement('div');
+  badge.className = `score-delta ${delta > 0 ? 'score-delta--pos' : 'score-delta--neg'}`;
+  badge.textContent = (delta > 0 ? '+' : '') + delta;
+  anchorEl.style.position = 'relative';
+  anchorEl.appendChild(badge);
+  badge.addEventListener('animationend', () => badge.remove(), { once: true });
+}
+
 export function showToast(message, type = 'info') {
   const existing = document.querySelector('.toast');
   if (existing) existing.remove();
