@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600&display=swap');
 
 /* ── Custom properties ─────────────────────────────────────────────────────── */
 :root {
@@ -1425,6 +1425,10 @@ input[type=number] { -moz-appearance: textfield; }
   outline: 3px solid var(--accent-2);
 }
 
+.player-card-felt--leader {
+  outline: 2px solid #c9a84c;
+}
+
 /* Card corner pips */
 .card-corner {
   position: absolute;
@@ -1453,6 +1457,7 @@ input[type=number] { -moz-appearance: textfield; }
   right: 10px;
   font-size: 0.95rem;
   line-height: 1;
+  color: #c9a84c;
   filter: drop-shadow(0 1px 2px rgba(0,0,0,0.25));
 }
 
@@ -1466,7 +1471,7 @@ input[type=number] { -moz-appearance: textfield; }
 
 .card-score {
   font-family: var(--font-display);
-  font-size: 52px;
+  font-size: 46px;
   font-weight: 700;
   color: var(--black);
   line-height: 1;
@@ -1560,8 +1565,8 @@ input[type=number] { -moz-appearance: textfield; }
   animation: flashCard 600ms ease forwards;
 }
 
-.score-flash--pos { color: #166534; }
-.score-flash--neg { color: var(--red); }
+.score-flash--pos { color: #7ed4a8; }
+.score-flash--neg { color: #e07070; }
 
 @keyframes flashCard {
   0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.7); }
@@ -1611,5 +1616,112 @@ input[type=number] { -moz-appearance: textfield; }
   font-family: var(--font-body);
   font-weight: 500;
   white-space: nowrap;
+}
+
+/* ── Zone label (Tussenstand / Punten deze ronde) ──────────────────────────── */
+.zone-label {
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.35);
+  margin: 12px 0 6px;
+}
+
+/* ── Scheidingslijn tussen Zone 1 en Zone 2 ────────────────────────────────── */
+.round-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 0 10px;
+}
+
+.round-divider::before,
+.round-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(255,255,255,0.2);
+}
+
+.round-divider-label {
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.5);
+  white-space: nowrap;
+}
+
+/* ── Scoreinvoer container (Zone 2) ────────────────────────────────────────── */
+.score-input-zone {
+  background: rgba(0,0,0,0.12);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ── Pill-control per speler ───────────────────────────────────────────────── */
+.pill-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.pill-player {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.pill-suit { font-size: 1rem; }
+
+.pill-name {
+  font-size: 0.95rem;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pill-control {
+  display: flex;
+  align-items: center;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 50px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.pill-btn {
+  min-width: 40px;
+  height: 36px;
+  border: none;
+  background: transparent;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 120ms ease;
+}
+
+.pill-btn:active { opacity: 0.7; }
+.pill-btn--minus { color: #e07070; }
+.pill-btn--minus:hover { background: rgba(224,112,112,0.15); }
+.pill-btn--plus  { color: #7ed4a8; }
+.pill-btn--plus:hover  { background: rgba(126,212,168,0.15); }
+
+.pill-value {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  min-width: 36px;
+  text-align: center;
+  padding: 0 4px;
 }
 

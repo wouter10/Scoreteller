@@ -26,9 +26,9 @@ function buildLivesHtml(score, losingScore) {
   const remaining = Math.max(0, losingScore - score);
   if (losingScore <= 8) {
     const lost = losingScore - remaining;
-    return '♠'.repeat(remaining) + '<span class="life-empty">' + '○'.repeat(lost) + '</span>';
+    return '●'.repeat(remaining) + '<span class="life-empty">' + '○'.repeat(lost) + '</span>';
   }
-  return `♠ ${remaining}/${losingScore}`;
+  return `● ${remaining}/${losingScore}`;
 }
 
 function renderScoreboard({ app, prevScores }) {
@@ -72,23 +72,24 @@ function renderScoreboard({ app, prevScores }) {
     .map(pid => ({ player: players.find(p => p.id === pid), score: active.scores[pid] ?? 0 }))
     .filter(x => x.player);
 
-  // In penalty games, lowest score = leader
   const minScore = Math.min(...sortedPlayers.map(x => x.score));
 
   // ── Pending deltas (points to add this round) ──────────────────────────────
   const pendingDeltas = {};
   for (const { player } of sortedPlayers) pendingDeltas[player.id] = 0;
 
+  // ── Zone 1: Tussenstand label ─────────────────────────────────────────────
+  screen.appendChild(el('div', { class: 'zone-label' }, 'Tussenstand'));
+
   // ── Player card grid ──────────────────────────────────────────────────────
   const grid = el('div', { class: 'player-grid' });
-  const pendingEls = {}; // badge elements for in-place update
+  const pendingEls = {};
 
   sortedPlayers.forEach(({ player, score }, i) => {
     const isPelt = game && score >= game.peltThreshold;
     const isLeader = score === minScore;
     const suit = getSuitForIndex(i);
 
-    // Corner pip element (reused top-left and bottom-right)
     function makePip() {
       const corner = document.createElement('div');
       corner.className = 'card-corner';
@@ -108,61 +109,32 @@ function renderScoreboard({ app, prevScores }) {
     const pipBR = makePip();
     pipBR.classList.add('card-corner--br');
 
-    // Leader star
     const starEl = el('span', { class: 'card-leader-star' }, '★');
 
-    // Score display
     const scoreEl = el('div', { class: 'card-score' }, String(score));
-
-    // Name
     const nameEl = el('div', { class: 'card-name' }, player.name);
 
-    // Lives
     const livesEl = document.createElement('div');
     livesEl.className = 'card-lives';
     livesEl.innerHTML = buildLivesHtml(score, game?.losingScore);
 
-    // Pending delta badge
     const pendingBadge = el('div', { class: 'card-pending' }, '');
     pendingEls[player.id] = pendingBadge;
 
-    // Score wrapper
     const scoreWrap = el('div', { class: 'card-score-wrap' }, scoreEl, nameEl, livesEl);
 
-    // +/- buttons
-    const minusBtn = el('button', { class: 'card-btn card-btn--minus' }, '−');
-    const plusBtn = el('button', { class: 'card-btn card-btn--plus' }, '+');
+    let cardClass = 'player-card-felt';
+    if (isPelt) cardClass += ' player-card-felt--pelt';
+    else if (isLeader) cardClass += ' player-card-felt--leader';
 
-    function updatePending() {
-      const v = pendingDeltas[player.id];
-      pendingBadge.textContent = (v > 0 ? '+' : '') + v;
-      pendingBadge.className = 'card-pending' + (v > 0 ? ' card-pending--pos' : v < 0 ? ' card-pending--neg' : '');
-    }
-
-    minusBtn.addEventListener('click', () => {
-      pendingDeltas[player.id] = Math.max(-99, pendingDeltas[player.id] - 1);
-      updatePending();
-      showScoreFlash(-1);
-    });
-
-    plusBtn.addEventListener('click', () => {
-      pendingDeltas[player.id] = Math.min(99, pendingDeltas[player.id] + 1);
-      updatePending();
-      showScoreFlash(+1);
-    });
-
-    const controls = el('div', { class: 'card-controls' }, minusBtn, plusBtn);
-
-    const card = el('div', { class: `player-card-felt${isPelt ? ' player-card-felt--pelt' : ''}` },
+    const card = el('div', { class: cardClass },
       pipTL,
       isLeader ? starEl : null,
       pendingBadge,
       scoreWrap,
       pipBR,
-      controls,
     );
 
-    // Show delta badge from previous round
     if (prevScores && prevScores[player.id] !== undefined) {
       const delta = score - prevScores[player.id];
       if (delta !== 0) {
@@ -175,12 +147,68 @@ function renderScoreboard({ app, prevScores }) {
 
   screen.appendChild(grid);
 
-  // ── Action buttons ────────────────────────────────────────────────────────
-  const resetBtn = el('button', { class: 'btn--felt' }, 'Reset');
-  const confirmBtn = el('button', { class: 'btn--felt btn--felt-primary' }, 'Volgende ronde ✓');
+  // ── Zone 2: Scheidingslijn ────────────────────────────────────────────────
+  const divider = el('div', { class: 'round-divider' },
+    el('span', { class: 'round-divider-label' }, 'Punten deze ronde'),
+  );
+  screen.appendChild(divider);
+
+  // ── Zone 2: Scoreinvoer met pill-controls ─────────────────────────────────
+  const inputZone = el('div', { class: 'score-input-zone' });
+  const pillValueEls = {};
+
+  sortedPlayers.forEach(({ player }, i) => {
+    const suit = getSuitForIndex(i);
+
+    const suitEl = el('span', { class: `pill-suit ${suit.cls}` }, suit.char);
+    const nameEl = el('span', { class: 'pill-name' }, player.name);
+    const pillPlayer = el('div', { class: 'pill-player' }, suitEl, nameEl);
+
+    const minusBtn = el('button', { class: 'pill-btn pill-btn--minus' }, '−');
+    const valueEl = el('span', { class: 'pill-value' }, '0');
+    const plusBtn = el('button', { class: 'pill-btn pill-btn--plus' }, '+');
+
+    pillValueEls[player.id] = valueEl;
+
+    function updatePill() {
+      const v = pendingDeltas[player.id];
+      valueEl.textContent = (v > 0 ? '+' : '') + v;
+      // also sync pending badge on card
+      const badge = pendingEls[player.id];
+      if (badge) {
+        badge.textContent = (v > 0 ? '+' : '') + v;
+        badge.className = 'card-pending' + (v > 0 ? ' card-pending--pos' : v < 0 ? ' card-pending--neg' : '');
+      }
+    }
+
+    minusBtn.addEventListener('click', () => {
+      pendingDeltas[player.id] = Math.max(-99, pendingDeltas[player.id] - 1);
+      updatePill();
+      showScoreFlash(-1);
+    });
+
+    plusBtn.addEventListener('click', () => {
+      pendingDeltas[player.id] = Math.min(99, pendingDeltas[player.id] + 1);
+      updatePill();
+      showScoreFlash(+1);
+    });
+
+    const pillControl = el('div', { class: 'pill-control' }, minusBtn, valueEl, plusBtn);
+    const pillRow = el('div', { class: 'pill-row' }, pillPlayer, pillControl);
+    inputZone.appendChild(pillRow);
+  });
+
+  screen.appendChild(inputZone);
+
+  // ── Footer: actieknoppen ──────────────────────────────────────────────────
+  const resetBtn = el('button', { class: 'btn--felt' }, 'Wis invoer');
+  const confirmBtn = el('button', { class: 'btn--felt btn--felt-primary' }, 'Bevestigen ✓');
 
   resetBtn.addEventListener('click', () => {
     for (const pid of Object.keys(pendingDeltas)) pendingDeltas[pid] = 0;
+    for (const pid of Object.keys(pillValueEls)) {
+      pillValueEls[pid].textContent = '0';
+    }
     for (const pid of Object.keys(pendingEls)) {
       pendingEls[pid].textContent = '';
       pendingEls[pid].className = 'card-pending';
