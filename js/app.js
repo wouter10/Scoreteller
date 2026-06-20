@@ -7,6 +7,7 @@ import { registerNewSessionScreen } from './screens/newSession.js';
 import { registerScoreboardScreen } from './screens/scoreboard.js';
 import { registerEndScreen } from './screens/end.js';
 import { registerStatsScreen } from './screens/stats.js';
+import { registerGamesScreen } from './screens/games.js';
 
 // ── State ─────────────────────────────────────────────────────────────────────
 let currentScreen = 'home';
@@ -100,17 +101,40 @@ export function abandonSession() {
   navigate('home');
 }
 
+export function undoLastRound() {
+  if (!activeSession || activeSession.rounds.length === 0) {
+    showToast('Geen ronde om ongedaan te maken', 'info');
+    return;
+  }
+  const rounds = activeSession.rounds.slice(0, -1);
+  const scores = {};
+  for (const id of activeSession.playerIds) scores[id] = 0;
+  for (const round of rounds) {
+    for (const { playerId, points } of round.entries) {
+      scores[playerId] = (scores[playerId] ?? 0) + points;
+    }
+  }
+  activeSession.rounds = rounds;
+  activeSession.scores = scores;
+  data.saveActiveSession(activeSession);
+  showToast('Laatste ronde ongedaan gemaakt', 'info');
+  navigate('scoreboard');
+}
+
 // ── Player actions ────────────────────────────────────────────────────────────
-export function addPlayer(name) {
+export function addPlayer(name, color) {
   const players = data.getPlayers();
   const trimmed = name.trim();
   if (!trimmed) { showToast('Naam mag niet leeg zijn', 'error'); return false; }
   if (players.some(p => p.name.toLowerCase() === trimmed.toLowerCase())) {
     showToast('Speler bestaat al', 'error'); return false;
   }
+  const usedColors = players.map(p => p.color).filter(Boolean);
+  const autoColor = color ?? data.PLAYER_COLORS.find(c => !usedColors.includes(c)) ?? data.PLAYER_COLORS[0];
   players.push({
     id: data.generateId('p'),
     name: trimmed,
+    color: autoColor,
     createdAt: new Date().toISOString(),
     stats: { gamesPlayed: 0, gamesLost: 0 },
   });
@@ -118,13 +142,14 @@ export function addPlayer(name) {
   return true;
 }
 
-export function editPlayer(id, name) {
+export function editPlayer(id, name, color) {
   const players = data.getPlayers();
   const trimmed = name.trim();
   if (!trimmed) { showToast('Naam mag niet leeg zijn', 'error'); return false; }
   const idx = players.findIndex(p => p.id === id);
   if (idx === -1) return false;
   players[idx].name = trimmed;
+  if (color) players[idx].color = color;
   data.savePlayers(players);
   return true;
 }
@@ -174,6 +199,7 @@ export const appAPI = {
   addGame,
   editGame,
   deleteGame,
+  undoLastRound,
   getData: data,
   getActiveSession: () => activeSession,
 };
@@ -184,6 +210,7 @@ function init() {
 
   registerHomeScreen(registerScreen);
   registerPlayersScreen(registerScreen);
+  registerGamesScreen(registerScreen);
   registerNewSessionScreen(registerScreen);
   registerScoreboardScreen(registerScreen);
   registerEndScreen(registerScreen);

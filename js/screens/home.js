@@ -73,6 +73,7 @@ function renderHome({ app }) {
   // Nav grid
   const navGrid = el('div', { class: 'nav-grid' },
     navCard('👥', 'Spelers', 'Beheer je spelers', () => app.navigate('players')),
+    navCard('🎮', 'Spellen', 'Voeg spellen toe of bewerk ze', () => app.navigate('games')),
     navCard('📊', 'Statistieken', 'Bekijk scores & history', () => app.navigate('stats')),
   );
   screen.appendChild(navGrid);

@@ -32,6 +32,17 @@ export function getActiveSession() { return read(KEYS.activeSession); }
 export function saveActiveSession(s) { write(KEYS.activeSession, s); }
 export function clearActiveSession() { localStorage.removeItem(KEYS.activeSession); }
 
+export const PLAYER_COLORS = [
+  '#f5c542',
+  '#e8534a',
+  '#4ade80',
+  '#60a5fa',
+  '#f97316',
+  '#a78bfa',
+  '#f472b6',
+  '#22d3ee',
+];
+
 export function generateId(prefix) {
   return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 }
@@ -42,7 +53,7 @@ export function seedDefaultData() {
     saveGames([{
       id: 'g_toepen',
       name: 'Toepen',
-      losingScore: 50,
+      losingScore: 15,
       peltThreshold: 14,
       maxPointsPerRound: null,
       allowNegativePoints: true,
