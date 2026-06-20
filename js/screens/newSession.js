@@ -55,6 +55,7 @@ function renderNewSession({ app }) {
     }
     for (const player of players) {
       const isSelected = selectedPlayerIds.has(player.id);
+      const avatarStyle = player.color ? `background:${player.color};color:#0f0f13` : '';
       const row = el('button', {
         class: `player-select-row ${isSelected ? 'player-select-row--selected' : ''}`,
         onclick: () => {
@@ -67,7 +68,7 @@ function renderNewSession({ app }) {
           updateStartBtn();
         },
       },
-        el('div', { class: 'player-select-avatar' }, player.name.charAt(0).toUpperCase()),
+        el('div', { class: 'player-select-avatar', style: avatarStyle }, player.name.charAt(0).toUpperCase()),
         el('div', { class: 'player-select-name' }, player.name),
         el('div', { class: `player-select-check ${isSelected ? 'visible' : ''}` }, '✓'),
       );

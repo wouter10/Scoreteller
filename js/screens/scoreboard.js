@@ -15,13 +15,23 @@ function renderScoreboard({ app, prevScores }) {
   const screen = el('div', { class: 'screen scoreboard-screen' });
 
   // Header
+  const roundCount = (active.rounds ?? []).length;
+  const undoBtn = createButton('↩', 'ghost');
+  undoBtn.title = 'Laatste ronde ongedaan maken';
+  undoBtn.className = 'btn btn--ghost btn--small';
+  undoBtn.disabled = roundCount === 0;
+  undoBtn.addEventListener('click', () => {
+    if (confirm('Laatste ronde ongedaan maken?')) app.undoLastRound();
+  });
+
   const header = el('div', { class: 'screen-header' },
-    createButton('✕ Stoppen', 'ghost', () => {
+    createButton('✕', 'ghost', () => {
       if (confirm('Sessie verlaten zonder op te slaan?')) {
         app.abandonSession();
       }
     }),
     el('h2', { class: 'screen-title' }, game?.name ?? 'Scoreboard'),
+    undoBtn,
   );
   screen.appendChild(header);
 
@@ -39,10 +49,11 @@ function renderScoreboard({ app, prevScores }) {
     const progress = game ? Math.min(score / game.losingScore, 1) : 0;
 
     const scoreValueEl = el('div', { class: 'score-value' }, String(score));
+    const avatarStyle = player.color && !isPelt ? `background:${player.color};color:#0f0f13` : '';
 
     const row = el('div', { class: `score-row ${isPelt ? 'score-row--pelt' : ''}` },
       el('div', { class: 'score-row-left' },
-        el('div', { class: 'score-avatar' }, player.name.charAt(0).toUpperCase()),
+        el('div', { class: 'score-avatar', style: avatarStyle }, player.name.charAt(0).toUpperCase()),
         el('div', { class: 'score-player-info' },
           el('div', { class: 'score-player-name' }, player.name),
           isPelt ? el('div', { class: 'pelt-badge' }, '⚠️ PELT') : null,
@@ -80,6 +91,57 @@ function renderScoreboard({ app, prevScores }) {
     screen.appendChild(
       el('div', { class: 'losing-score-hint' }, `Verloren bij ${game.losingScore} punten`)
     );
+  }
+
+  // Round history (collapsible)
+  const rounds = active.rounds ?? [];
+  if (rounds.length > 0) {
+    const historySection = el('div', { class: 'round-history' });
+    let expanded = false;
+
+    const toggleBtn = el('button', { class: 'round-history-toggle' },
+      `🕐 Rondegeschiedenis (${rounds.length})`
+    );
+
+    const historyBody = el('div', { class: 'round-history-body hidden' });
+
+    const headerRow = el('div', { class: 'history-header-row' },
+      el('div', { class: 'history-cell history-cell--round' }, '#'),
+      ...sortedPlayers.map(({ player }) =>
+        el('div', { class: 'history-cell', style: player.color ? `color:${player.color}` : '' }, player.name)
+      ),
+    );
+    historyBody.appendChild(headerRow);
+
+    const runningTotals = {};
+    for (const { player } of sortedPlayers) runningTotals[player.id] = 0;
+
+    rounds.forEach((round, idx) => {
+      for (const entry of round.entries) {
+        runningTotals[entry.playerId] = (runningTotals[entry.playerId] ?? 0) + entry.points;
+      }
+      const row = el('div', { class: 'history-row' },
+        el('div', { class: 'history-cell history-cell--round' }, String(idx + 1)),
+        ...sortedPlayers.map(({ player }) => {
+          const entry = round.entries.find(e => e.playerId === player.id);
+          const pts = entry?.points ?? 0;
+          return el('div', {
+            class: `history-cell ${pts > 0 ? 'history-cell--pos' : pts < 0 ? 'history-cell--neg' : ''}`,
+          }, pts !== 0 ? (pts > 0 ? `+${pts}` : String(pts)) : '—');
+        }),
+      );
+      historyBody.appendChild(row);
+    });
+
+    toggleBtn.addEventListener('click', () => {
+      expanded = !expanded;
+      historyBody.classList.toggle('hidden', !expanded);
+      toggleBtn.classList.toggle('round-history-toggle--open', expanded);
+    });
+
+    historySection.appendChild(toggleBtn);
+    historySection.appendChild(historyBody);
+    screen.appendChild(historySection);
   }
 
   // Round input form
@@ -137,9 +199,10 @@ function renderScoreboard({ app, prevScores }) {
       updateRowHighlight(stepperRow, next);
     });
 
+    const stepperAvatarStyle = player.color ? `background:${player.color};color:#0f0f13` : '';
     const stepperRow = el('div', { class: 'stepper-row' },
       el('div', { class: 'stepper-player' },
-        el('div', { class: 'stepper-avatar' }, player.name.charAt(0).toUpperCase()),
+        el('div', { class: 'stepper-avatar', style: stepperAvatarStyle }, player.name.charAt(0).toUpperCase()),
         el('span', { class: 'stepper-name' }, player.name),
       ),
       el('div', { class: 'stepper-controls' },
@@ -177,8 +240,6 @@ function renderScoreboard({ app, prevScores }) {
   form.appendChild(submitBtn);
   screen.appendChild(form);
 
-  // Round count
-  const roundCount = (active.rounds ?? []).length;
   screen.appendChild(
     el('div', { class: 'round-count' }, `Ronde ${roundCount + 1}`)
   );
