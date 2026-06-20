@@ -62,7 +62,9 @@ body::before {
   width: 100%;
   max-width: var(--max-w);
   margin: 0 auto;
-  padding: 0 16px 32px;
+  padding: 0 16px calc(16px + env(safe-area-inset-bottom));
+  padding-left: calc(16px + env(safe-area-inset-left));
+  padding-right: calc(16px + env(safe-area-inset-right));
   overflow-y: auto;
   scrollbar-width: none;
   position: relative;
@@ -146,7 +148,7 @@ h3 { font-size: 1.1rem; font-weight: 600; }
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 16px 0 8px;
+  padding: 10px 0 6px;
 }
 
 .screen-title {
@@ -276,16 +278,16 @@ h3 { font-size: 1.1rem; font-weight: 600; }
 
 .home-header {
   text-align: center;
-  padding: 32px 0 24px;
+  padding: 12px 0 10px;
 }
 
 .home-logo {
-  font-size: 4rem;
-  margin-bottom: 8px;
+  font-size: 2.5rem;
+  margin-bottom: 4px;
 }
 
 .home-title {
-  font-size: 2.5rem;
+  font-size: 2rem;
   font-weight: 700;
   font-family: var(--font-display);
   color: #fff;
@@ -323,14 +325,14 @@ h3 { font-size: 1.1rem; font-weight: 600; }
 .stats-bar {
   display: flex;
   gap: 12px;
-  margin-bottom: 24px;
+  margin-bottom: 14px;
 }
 
 .stat-chip {
   flex: 1;
   background: var(--surface);
   border-radius: var(--radius-sm);
-  padding: 12px 8px;
+  padding: 8px 8px;
   text-align: center;
   border: 1px solid rgba(255,255,255,0.06);
 }
@@ -353,7 +355,7 @@ h3 { font-size: 1.1rem; font-weight: 600; }
   display: flex;
   flex-direction: column;
   gap: 12px;
-  margin-bottom: 24px;
+  margin-bottom: 14px;
 }
 
 .notice-card {
@@ -1416,8 +1418,8 @@ input[type=number] { -moz-appearance: textfield; }
 .player-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin: 12px 0;
+  gap: 8px;
+  margin: 8px 0;
 }
 
 .player-card-felt {
@@ -1425,8 +1427,8 @@ input[type=number] { -moz-appearance: textfield; }
   border-radius: 10px;
   box-shadow: var(--card-shadow);
   position: relative;
-  padding: 14px 12px 48px;
-  min-height: 175px;
+  padding: 10px 10px 38px;
+  min-height: 140px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1485,7 +1487,7 @@ input[type=number] { -moz-appearance: textfield; }
 
 .card-score {
   font-family: var(--font-display);
-  font-size: 46px;
+  font-size: 38px;
   font-weight: 700;
   color: var(--black);
   line-height: 1;
@@ -1593,8 +1595,12 @@ input[type=number] { -moz-appearance: textfield; }
 .scoreboard-actions {
   display: flex;
   gap: 10px;
-  margin-top: 12px;
-  margin-bottom: 16px;
+  position: sticky;
+  bottom: 0;
+  margin-top: 10px;
+  padding: 10px 0 calc(10px + env(safe-area-inset-bottom));
+  background: linear-gradient(to bottom, transparent 0%, var(--felt) 35%);
+  z-index: 10;
 }
 
 .btn--felt {
@@ -1638,7 +1644,7 @@ input[type=number] { -moz-appearance: textfield; }
   letter-spacing: 1.5px;
   text-transform: uppercase;
   color: rgba(255,255,255,0.35);
-  margin: 12px 0 6px;
+  margin: 6px 0 4px;
 }
 
 /* ── Scheidingslijn tussen Zone 1 en Zone 2 ────────────────────────────────── */
@@ -1646,7 +1652,7 @@ input[type=number] { -moz-appearance: textfield; }
   display: flex;
   align-items: center;
   gap: 10px;
-  margin: 14px 0 10px;
+  margin: 8px 0 6px;
 }
 
 .round-divider::before,
@@ -1667,10 +1673,10 @@ input[type=number] { -moz-appearance: textfield; }
 .score-input-zone {
   background: rgba(0,0,0,0.12);
   border-radius: 12px;
-  padding: 12px;
+  padding: 8px 10px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 6px;
 }
 
 /* ── Pill-control per speler ───────────────────────────────────────────────── */
@@ -1710,8 +1716,8 @@ input[type=number] { -moz-appearance: textfield; }
 }
 
 .pill-btn {
-  min-width: 40px;
-  height: 36px;
+  min-width: 38px;
+  height: 32px;
   border: none;
   background: transparent;
   font-size: 1.1rem;
@@ -1742,9 +1748,11 @@ input[type=number] { -moz-appearance: textfield; }
 /* ── Home card stage animation ─────────────────────────────────────────────── */
 .card-stage {
   position: relative;
-  height: 140px;
-  margin: 0 auto 24px;
-  width: 260px;
+  height: 90px;
+  margin: 0 auto 12px;
+  width: 200px;
+  transform: scale(0.72);
+  transform-origin: top center;
 }
 
 .fc {
