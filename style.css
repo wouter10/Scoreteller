@@ -938,21 +938,25 @@ h3 { font-size: 1.1rem; font-weight: 600; }
 }
 
 .stat-item {
-  background: var(--surface-2);
+  background: var(--surface);
   border-radius: var(--radius-sm);
-  padding: 10px 6px;
+  padding: 12px 8px;
   text-align: center;
+  border: 1px solid rgba(255,255,255,0.06);
 }
 
 .stat-item-value {
-  font-size: 1.3rem;
+  display: block;
+  font-size: 1.6rem;
   font-weight: 800;
   color: var(--accent);
 }
 
 .stat-item-label {
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
   margin-top: 2px;
 }
 

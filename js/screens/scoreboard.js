@@ -28,7 +28,7 @@ function buildLivesHtml(score, losingScore) {
     const lost = losingScore - remaining;
     return '●'.repeat(remaining) + '<span class="life-empty">' + '○'.repeat(lost) + '</span>';
   }
-  return `● ${remaining}/${losingScore}`;
+  return `● ${score}`;
 }
 
 function renderScoreboard({ app, prevScores }) {
