@@ -1,4 +1,4 @@
-import { el, createButton, showToast } from '../ui.js';
+import { el, createButton, showToast, showDelta } from '../ui.js';
 import * as data from '../data.js';
 import { isValidPoints } from '../gameLogic.js';
 
@@ -6,7 +6,7 @@ export function registerScoreboardScreen(registerScreen) {
   registerScreen('scoreboard', renderScoreboard);
 }
 
-function renderScoreboard({ app }) {
+function renderScoreboard({ app, prevScores }) {
   const active = app.getActiveSession();
   if (!active) { app.navigate('home'); return null; }
 
@@ -32,10 +32,13 @@ function renderScoreboard({ app }) {
     .sort((a, b) => a.score - b.score);
 
   const table = el('div', { class: 'score-table' });
+  const scoreRowWraps = {};
 
-  for (const { player, score } of sortedPlayers) {
+  sortedPlayers.forEach(({ player, score }, i) => {
     const isPelt = game && score >= game.peltThreshold;
     const progress = game ? Math.min(score / game.losingScore, 1) : 0;
+
+    const scoreValueEl = el('div', { class: 'score-value' }, String(score));
 
     const row = el('div', { class: `score-row ${isPelt ? 'score-row--pelt' : ''}` },
       el('div', { class: 'score-row-left' },
@@ -45,19 +48,31 @@ function renderScoreboard({ app }) {
           isPelt ? el('div', { class: 'pelt-badge' }, '⚠️ PELT') : null,
         ),
       ),
-      el('div', { class: 'score-value' }, String(score)),
+      scoreValueEl,
     );
 
-    // Progress bar
     const bar = el('div', { class: 'score-progress-bar' },
       el('div', {
         class: `score-progress-fill ${isPelt ? 'score-progress-fill--pelt' : ''}`,
         style: `width: ${Math.round(progress * 100)}%`,
       }),
     );
-    const rowWrap = el('div', { class: 'score-row-wrap' }, row, bar);
+    const rowWrap = el('div', {
+      class: 'score-row-wrap',
+      style: `animation-delay: ${i * 50}ms`,
+    }, row, bar);
+    rowWrap.classList.add('score-row-enter');
+    scoreRowWraps[player.id] = { wrap: rowWrap, scoreEl: scoreValueEl };
     table.appendChild(rowWrap);
-  }
+
+    // Show delta badge if we just came from a round submission
+    if (prevScores && prevScores[player.id] !== undefined) {
+      const delta = score - prevScores[player.id];
+      if (delta !== 0) {
+        requestAnimationFrame(() => showDelta(scoreValueEl, delta));
+      }
+    }
+  });
 
   screen.appendChild(table);
 
@@ -71,78 +86,92 @@ function renderScoreboard({ app }) {
   screen.appendChild(el('h3', { class: 'section-label' }, '➕ Ronde invoeren'));
 
   const form = el('div', { class: 'round-form card' });
-  const selectedIds = new Set();
 
-  // Player checkboxes
-  const playerToggles = el('div', { class: 'round-player-toggles' });
-
-  function renderToggles() {
-    playerToggles.innerHTML = '';
-    for (const { player } of sortedPlayers) {
-      const isSel = selectedIds.has(player.id);
-      const btn = el('button', {
-        class: `player-toggle ${isSel ? 'player-toggle--selected' : ''}`,
-        onclick: () => {
-          if (selectedIds.has(player.id)) selectedIds.delete(player.id);
-          else selectedIds.add(player.id);
-          renderToggles();
-          updateSubmitBtn();
-        },
-      },
-        el('span', { class: 'player-toggle-avatar' }, player.name.charAt(0).toUpperCase()),
-        el('span', { class: 'player-toggle-name' }, player.name),
-      );
-      playerToggles.appendChild(btn);
-    }
+  // Per-player stepper rows
+  const pointValues = {};
+  for (const { player } of sortedPlayers) {
+    pointValues[player.id] = 0;
   }
-  renderToggles();
-  form.appendChild(playerToggles);
 
-  // Points input
-  const pointsRow = el('div', { class: 'points-row' },
-    el('label', { class: 'points-label', for: 'points-input' }, 'Punten:'),
-    el('input', {
-      class: 'points-input',
-      id: 'points-input',
+  const stepperList = el('div', { class: 'stepper-list' });
+
+  for (const { player } of sortedPlayers) {
+    const inputEl = el('input', {
+      class: 'stepper-input',
       type: 'number',
-      placeholder: '0',
       min: '-99',
       max: '99',
-    }),
-  );
-  form.appendChild(pointsRow);
+      value: '0',
+    });
+
+    inputEl.addEventListener('input', () => {
+      const v = parseInt(inputEl.value, 10);
+      pointValues[player.id] = isNaN(v) ? 0 : v;
+      updateRowHighlight(stepperRow, pointValues[player.id]);
+    });
+
+    inputEl.addEventListener('blur', () => {
+      if (inputEl.value === '' || isNaN(parseInt(inputEl.value, 10))) {
+        inputEl.value = '0';
+        pointValues[player.id] = 0;
+        updateRowHighlight(stepperRow, 0);
+      }
+    });
+
+    const minusBtn = el('button', { class: 'stepper-btn stepper-btn--minus' }, '−');
+    const plusBtn = el('button', { class: 'stepper-btn stepper-btn--plus' }, '+');
+
+    minusBtn.addEventListener('click', () => {
+      const cur = pointValues[player.id] ?? 0;
+      const next = Math.max(-99, cur - 1);
+      pointValues[player.id] = next;
+      inputEl.value = String(next);
+      updateRowHighlight(stepperRow, next);
+    });
+
+    plusBtn.addEventListener('click', () => {
+      const cur = pointValues[player.id] ?? 0;
+      const next = Math.min(99, cur + 1);
+      pointValues[player.id] = next;
+      inputEl.value = String(next);
+      updateRowHighlight(stepperRow, next);
+    });
+
+    const stepperRow = el('div', { class: 'stepper-row' },
+      el('div', { class: 'stepper-player' },
+        el('div', { class: 'stepper-avatar' }, player.name.charAt(0).toUpperCase()),
+        el('span', { class: 'stepper-name' }, player.name),
+      ),
+      el('div', { class: 'stepper-controls' },
+        minusBtn,
+        inputEl,
+        plusBtn,
+      ),
+    );
+
+    stepperList.appendChild(stepperRow);
+  }
+
+  form.appendChild(stepperList);
 
   const submitBtn = createButton('✓ Ronde Bevestigen', 'primary');
   submitBtn.className = 'btn btn--primary btn--large';
-  submitBtn.disabled = true;
-
-  function updateSubmitBtn() {
-    submitBtn.disabled = selectedIds.size === 0;
-  }
 
   submitBtn.addEventListener('click', () => {
-    const pointsInput = form.querySelector('#points-input');
-    if (!pointsInput) { showToast('Formulier fout', 'error'); return; }
-    const raw = pointsInput.value.trim();
-    const points = parseInt(raw, 10);
-
-    if (raw === '' || isNaN(points)) {
-      showToast('Vul een geldig aantal punten in', 'error');
-      return;
+    const entries = [];
+    for (const { player } of sortedPlayers) {
+      const points = pointValues[player.id] ?? 0;
+      if (game && !isValidPoints(points, game)) {
+        showToast(`Ongeldige puntwaarde voor ${player.name}`, 'error');
+        return;
+      }
+      entries.push({ playerId: player.id, points });
     }
 
-    if (game && !isValidPoints(points, game)) {
-      showToast('Ongeldige puntwaarde', 'error');
-      return;
-    }
-
-    if (selectedIds.size === 0) {
-      showToast('Selecteer minimaal één speler', 'error');
-      return;
-    }
-
-    const entries = [...selectedIds].map(playerId => ({ playerId, points }));
-    app.submitRound(entries);
+    const hasAnyNonZero = entries.some(e => e !== 0);
+    // Allow all-zero round (e.g. everyone tied), just submit as-is
+    animateSubmitBtn(submitBtn);
+    app.submitRound(entries, active.scores);
   });
 
   form.appendChild(submitBtn);
@@ -150,11 +179,26 @@ function renderScoreboard({ app }) {
 
   // Round count
   const roundCount = (active.rounds ?? []).length;
-  if (roundCount > 0) {
-    screen.appendChild(
-      el('div', { class: 'round-count' }, `Ronde ${roundCount + 1}`)
-    );
-  }
+  screen.appendChild(
+    el('div', { class: 'round-count' }, `Ronde ${roundCount + 1}`)
+  );
 
   return screen;
+}
+
+function updateRowHighlight(row, value) {
+  if (value > 0) {
+    row.classList.add('stepper-row--positive');
+    row.classList.remove('stepper-row--negative');
+  } else if (value < 0) {
+    row.classList.add('stepper-row--negative');
+    row.classList.remove('stepper-row--positive');
+  } else {
+    row.classList.remove('stepper-row--positive', 'stepper-row--negative');
+  }
+}
+
+function animateSubmitBtn(btn) {
+  btn.classList.add('btn--confirm-pulse');
+  btn.addEventListener('animationend', () => btn.classList.remove('btn--confirm-pulse'), { once: true });
 }
