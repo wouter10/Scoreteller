@@ -2,23 +2,22 @@
 
 /* ── Custom properties ─────────────────────────────────────────────────────── */
 :root {
-  --bg: #2d6a4f;
-  --felt: #2d6a4f;
-  --surface: rgba(255,255,255,0.13);
-  --surface-2: rgba(0,0,0,0.18);
-  --accent: #f5c542;
+  --bg: #1a3d2b;
+  --felt: #1a3d2b;
+  --surface: rgba(255,255,255,0.16);
+  --surface-2: rgba(255,255,255,0.10);
+  --accent: #c9a84c;
   --accent-2: #e8534a;
   --accent-3: #4ade80;
   --text: #f0f0f5;
-  --text-muted: rgba(240,240,245,0.6);
+  --text-muted: rgba(240,240,245,0.55);
   --radius: 12px;
   --radius-sm: 8px;
   --tap-min: 52px;
   --transition: 200ms ease;
   --max-w: 480px;
-
   --card-bg: #fafaf8;
-  --card-shadow: 0 4px 16px rgba(0,0,0,0.35), 0 1px 4px rgba(0,0,0,0.2);
+  --card-shadow: 0 4px 16px rgba(0,0,0,0.45), 0 1px 4px rgba(0,0,0,0.25);
   --red: #c0392b;
   --black: #1a1a1a;
   --font-display: 'Playfair Display', serif;
@@ -51,8 +50,9 @@ body::before {
   pointer-events: none;
   z-index: 0;
   background:
-    repeating-linear-gradient(45deg, rgba(0,0,0,0.04) 0, rgba(0,0,0,0.04) 1px, transparent 1px, transparent 8px),
-    repeating-linear-gradient(-45deg, rgba(0,0,0,0.04) 0, rgba(0,0,0,0.04) 1px, transparent 1px, transparent 8px);
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(201,168,76,0.18) 0%, transparent 70%),
+    repeating-linear-gradient(45deg, rgba(0,0,0,0.06) 0, rgba(0,0,0,0.06) 1px, transparent 1px, transparent 9px),
+    repeating-linear-gradient(-45deg, rgba(0,0,0,0.06) 0, rgba(0,0,0,0.06) 1px, transparent 1px, transparent 9px);
 }
 
 #app {
@@ -64,8 +64,13 @@ body::before {
   margin: 0 auto;
   padding: 0 16px 32px;
   overflow-y: auto;
+  scrollbar-width: none;
   position: relative;
   z-index: 1;
+}
+
+#app::-webkit-scrollbar {
+  display: none;
 }
 
 /* ── Screen transitions ────────────────────────────────────────────────────── */
@@ -106,8 +111,14 @@ h3 { font-size: 1.1rem; font-weight: 600; }
 .btn:active { transform: scale(0.97); }
 .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 
-.btn--primary { background: var(--accent); color: #0f0f13; }
-.btn--primary:hover:not(:disabled) { opacity: 0.9; }
+.btn--primary {
+  background: #c9a84c;
+  color: #0f1a0f;
+  box-shadow: 0 2px 14px rgba(201,168,76,0.4);
+}
+.btn--primary:hover:not(:disabled) {
+  background: #dfc06a;
+}
 
 .btn--danger { background: var(--accent-2); color: #fff; }
 .btn--danger:hover:not(:disabled) { opacity: 0.9; }
@@ -347,9 +358,13 @@ h3 { font-size: 1.1rem; font-weight: 600; }
 
 .notice-card {
   text-align: center;
-  color: var(--text-muted);
-  padding: 12px;
+  color: var(--text);
+  padding: 14px 16px;
   font-size: 0.9rem;
+  background: rgba(255,255,255,0.18);
+  border: 1px solid rgba(255,255,255,0.32);
+  border-radius: var(--radius);
+  font-weight: 500;
 }
 
 .nav-grid {
@@ -359,8 +374,8 @@ h3 { font-size: 1.1rem; font-weight: 600; }
 }
 
 .nav-card {
-  background: var(--surface);
-  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.16);
+  border: 1px solid rgba(255,255,255,0.28);
   border-radius: var(--radius);
   padding: 20px 12px;
   display: flex;
@@ -371,9 +386,8 @@ h3 { font-size: 1.1rem; font-weight: 600; }
   transition: background var(--transition), transform 100ms ease;
   text-align: center;
 }
-
 .nav-card:active { transform: scale(0.97); }
-.nav-card:hover { background: var(--surface-2); }
+.nav-card:hover { background: rgba(255,255,255,0.24); }
 
 .nav-card-icon { font-size: 2rem; }
 .nav-card-title { font-weight: 700; font-size: 0.95rem; }
@@ -924,21 +938,25 @@ h3 { font-size: 1.1rem; font-weight: 600; }
 }
 
 .stat-item {
-  background: var(--surface-2);
+  background: var(--surface);
   border-radius: var(--radius-sm);
-  padding: 10px 6px;
+  padding: 12px 8px;
   text-align: center;
+  border: 1px solid rgba(255,255,255,0.06);
 }
 
 .stat-item-value {
-  font-size: 1.3rem;
+  display: block;
+  font-size: 1.6rem;
   font-weight: 800;
   color: var(--accent);
 }
 
 .stat-item-label {
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
   margin-top: 2px;
 }
 
@@ -1724,4 +1742,48 @@ input[type=number] { -moz-appearance: textfield; }
   text-align: center;
   padding: 0 4px;
 }
+
+/* ── Home card stage animation ─────────────────────────────────────────────── */
+.card-stage {
+  position: relative;
+  height: 140px;
+  margin: 0 auto 24px;
+  width: 260px;
+}
+
+.fc {
+  position: absolute;
+  width: 56px; height: 80px;
+  background: #fafaf8;
+  border-radius: 5px;
+  box-shadow: 0 5px 16px rgba(0,0,0,0.55), 0 1px 3px rgba(0,0,0,0.3);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 5px 6px;
+  transform-origin: 50% 280%;
+  left: 50%;
+  margin-left: -28px;
+  top: 10px;
+  user-select: none;
+}
+
+.fc-corner { font-size: 12px; font-weight: 700; line-height: 1; display: flex; flex-direction: column; align-items: flex-start; }
+.fc-corner .suit { font-size: 10px; }
+.fc-corner-br { transform: rotate(180deg); align-self: flex-end; }
+.fc-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-54%); font-size: 22px; line-height: 1; }
+.fc-red { color: #c0392b; }
+.fc-blk { color: #1a1a1a; }
+
+.fc:nth-child(1) { transform: rotate(-24deg); animation: cf1 3.2s ease-in-out infinite; }
+.fc:nth-child(2) { transform: rotate(-12deg); animation: cf2 3.2s ease-in-out infinite 0.25s; }
+.fc:nth-child(3) { transform: rotate(0deg);   animation: cf3 3.2s ease-in-out infinite 0.5s; }
+.fc:nth-child(4) { transform: rotate(12deg);  animation: cf4 3.2s ease-in-out infinite 0.75s; }
+.fc:nth-child(5) { transform: rotate(24deg);  animation: cf5 3.2s ease-in-out infinite 1s; }
+
+@keyframes cf1 { 0%,100% { transform: rotate(-24deg) translateY(0); } 50% { transform: rotate(-22deg) translateY(-6px); } }
+@keyframes cf2 { 0%,100% { transform: rotate(-12deg) translateY(0); } 50% { transform: rotate(-10deg) translateY(-8px); } }
+@keyframes cf3 { 0%,100% { transform: rotate(0deg) translateY(0); }   50% { transform: rotate(1deg) translateY(-10px); } }
+@keyframes cf4 { 0%,100% { transform: rotate(12deg) translateY(0); }  50% { transform: rotate(10deg) translateY(-8px); } }
+@keyframes cf5 { 0%,100% { transform: rotate(24deg) translateY(0); }  50% { transform: rotate(22deg) translateY(-6px); } }
 

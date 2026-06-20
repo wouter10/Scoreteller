@@ -123,6 +123,6 @@ function renderStats({ app }) {
 function statItem(icon, label, value) {
   return el('div', { class: 'stat-item' },
     el('div', { class: 'stat-item-value' }, value),
-    el('div', { class: 'stat-item-label' }, `${icon} ${label}`),
+    el('div', { class: 'stat-item-label' }, label),
   );
 }
