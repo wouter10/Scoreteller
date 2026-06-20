@@ -1,6 +1,28 @@
 import { el, createButton, escapeHtml, showToast } from '../ui.js';
 import * as data from '../data.js';
 
+function colorSwatch(color, selected, onClick) {
+  const sw = el('button', { type: 'button', class: `color-swatch ${selected ? 'color-swatch--selected' : ''}` });
+  sw.style.background = color;
+  sw.addEventListener('click', onClick);
+  return sw;
+}
+
+function renderColorPicker(selectedColor, onChange) {
+  const wrap = el('div', { class: 'color-picker' });
+  const swatches = [];
+  for (const c of data.PLAYER_COLORS) {
+    const sw = colorSwatch(c, c === selectedColor, () => {
+      swatches.forEach(s => s.classList.remove('color-swatch--selected'));
+      sw.classList.add('color-swatch--selected');
+      onChange(c);
+    });
+    swatches.push(sw);
+    wrap.appendChild(sw);
+  }
+  return wrap;
+}
+
 export function registerPlayersScreen(registerScreen) {
   registerScreen('players', renderPlayers);
 }
@@ -50,7 +72,7 @@ function renderPlayerCard(player, app, refresh) {
   const card = el('div', { class: 'card player-card', 'data-id': player.id });
 
   const infoRow = el('div', { class: 'player-info-row' },
-    el('div', { class: 'player-avatar' }, player.name.charAt(0).toUpperCase()),
+    el('div', { class: 'player-avatar', style: player.color ? `background:${player.color}` : '' }, player.name.charAt(0).toUpperCase()),
     el('div', { class: 'player-details' },
       el('div', { class: 'player-name', id: `name-${player.id}` }, player.name),
       el('div', { class: 'player-meta' }, `${playedCount} gespeeld · ${lossCount} verloren`),
@@ -76,6 +98,8 @@ function startEdit(player, card, app, refresh) {
   const nameEl = card.querySelector(`#name-${player.id}`);
   if (!nameEl) return;
 
+  let selectedColor = player.color ?? data.PLAYER_COLORS[0];
+
   const input = el('input', {
     class: 'inline-edit-input',
     value: player.name,
@@ -83,9 +107,11 @@ function startEdit(player, card, app, refresh) {
     maxlength: '40',
   });
 
+  const picker = renderColorPicker(selectedColor, c => { selectedColor = c; });
+
   const confirmBtn = createButton('✓', 'primary', () => {
     const newName = input.value.trim();
-    if (newName && app.editPlayer(player.id, newName)) {
+    if (newName && app.editPlayer(player.id, newName, selectedColor)) {
       refresh();
     }
   });
@@ -94,9 +120,12 @@ function startEdit(player, card, app, refresh) {
   const cancelBtn = createButton('✕', 'ghost', () => refresh());
   cancelBtn.className = 'btn btn--ghost btn--small';
 
-  nameEl.replaceWith(
-    el('div', { class: 'inline-edit-row' }, input, confirmBtn, cancelBtn)
+  const editWrap = el('div', { class: 'inline-edit-wrap' },
+    el('div', { class: 'inline-edit-row' }, input, confirmBtn, cancelBtn),
+    picker,
   );
+
+  nameEl.replaceWith(editWrap);
 
   input.focus();
   input.select();
@@ -118,15 +147,22 @@ function renderAddForm(app, refresh) {
     autocomplete: 'off',
   });
 
+  const players = data.getPlayers();
+  const usedColors = players.map(p => p.color).filter(Boolean);
+  let selectedColor = data.PLAYER_COLORS.find(c => !usedColors.includes(c)) ?? data.PLAYER_COLORS[0];
+
+  const picker = renderColorPicker(selectedColor, c => { selectedColor = c; });
+
   const addBtn = createButton('+ Toevoegen', 'primary');
   addBtn.type = 'submit';
 
   form.appendChild(el('div', { class: 'form-row' }, input, addBtn));
+  form.appendChild(picker);
 
   form.addEventListener('submit', e => {
     e.preventDefault();
     const name = input.value.trim();
-    if (app.addPlayer(name)) {
+    if (app.addPlayer(name, selectedColor)) {
       input.value = '';
       refresh();
       input.focus();

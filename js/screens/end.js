@@ -5,6 +5,29 @@ export function registerEndScreen(registerScreen) {
   registerScreen('end', renderEnd);
 }
 
+function launchConfetti() {
+  const colors = ['#f5c542', '#4ade80', '#60a5fa', '#f97316', '#a78bfa', '#f472b6', '#22d3ee'];
+  const container = document.createElement('div');
+  container.className = 'confetti-container';
+  document.body.appendChild(container);
+
+  for (let i = 0; i < 60; i++) {
+    const piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    piece.style.left = `${Math.random() * 100}%`;
+    piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+    piece.style.animationDelay = `${Math.random() * 1.2}s`;
+    piece.style.animationDuration = `${1.2 + Math.random() * 1}s`;
+    piece.style.transform = `rotate(${Math.random() * 360}deg)`;
+    const size = 6 + Math.random() * 8;
+    piece.style.width = `${size}px`;
+    piece.style.height = `${size * (Math.random() > 0.5 ? 1 : 2.5)}px`;
+    container.appendChild(piece);
+  }
+
+  setTimeout(() => container.remove(), 3000);
+}
+
 function renderEnd({ app, losers = [] }) {
   const active = app.getActiveSession();
   if (!active) { app.navigate('home'); return null; }
@@ -12,6 +35,12 @@ function renderEnd({ app, losers = [] }) {
   const players = data.getPlayers();
   const game = data.getGames().find(g => g.id === active.gameId);
   const screen = el('div', { class: 'screen end-screen' });
+
+  // Fire confetti for winners
+  const hasWinners = active.playerIds.some(id => !losers.includes(id));
+  if (hasWinners) {
+    requestAnimationFrame(() => launchConfetti());
+  }
 
   // Trophy header
   screen.appendChild(el('div', { class: 'end-header' },
@@ -30,8 +59,9 @@ function renderEnd({ app, losers = [] }) {
 
   for (const { player, score } of sortedPlayers) {
     const isLoser = losers.includes(player.id);
+    const avatarStyle = player.color && !isLoser ? `background:${player.color};color:#0f0f13` : '';
     const resultCard = el('div', { class: `result-card ${isLoser ? 'result-card--loser' : 'result-card--winner'}` },
-      el('div', { class: 'result-icon' }, isLoser ? '💀' : '🏆'),
+      el('div', { class: 'result-avatar', style: avatarStyle }, player.name.charAt(0).toUpperCase()),
       el('div', { class: 'result-player-info' },
         el('div', { class: 'result-player-name' }, player.name),
         el('div', { class: 'result-label' }, isLoser ? 'Verloren' : 'Gewonnen'),
