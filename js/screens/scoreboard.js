@@ -1,9 +1,34 @@
-import { el, createButton, showToast, showDelta } from '../ui.js';
+import { el, showToast, showDelta } from '../ui.js';
 import * as data from '../data.js';
 import { isValidPoints } from '../gameLogic.js';
 
 export function registerScoreboardScreen(registerScreen) {
   registerScreen('scoreboard', renderScoreboard);
+}
+
+const SUITS = ['♠', '♥', '♦', '♣'];
+const SUIT_CLASSES = ['suit--black', 'suit--red', 'suit--red', 'suit--black'];
+
+function getSuitForIndex(i) {
+  return { char: SUITS[i % 4], cls: SUIT_CLASSES[i % 4] };
+}
+
+function showScoreFlash(delta) {
+  const flash = document.createElement('div');
+  flash.className = `score-flash ${delta > 0 ? 'score-flash--pos' : 'score-flash--neg'}`;
+  flash.textContent = (delta > 0 ? '+' : '') + delta;
+  document.body.appendChild(flash);
+  flash.addEventListener('animationend', () => flash.remove(), { once: true });
+}
+
+function buildLivesHtml(score, losingScore) {
+  if (!losingScore) return '';
+  const remaining = Math.max(0, losingScore - score);
+  if (losingScore <= 8) {
+    const lost = losingScore - remaining;
+    return '●'.repeat(remaining) + '<span class="life-empty">' + '○'.repeat(lost) + '</span>';
+  }
+  return '';
 }
 
 function renderScoreboard({ app, prevScores }) {
@@ -12,88 +37,201 @@ function renderScoreboard({ app, prevScores }) {
 
   const game = data.getGames().find(g => g.id === active.gameId);
   const players = data.getPlayers();
+
   const screen = el('div', { class: 'screen scoreboard-screen' });
 
-  // Header
+  // ── Header ────────────────────────────────────────────────────────────────
   const roundCount = (active.rounds ?? []).length;
-  const undoBtn = createButton('↩', 'ghost');
+
+  const closeBtn = el('button', { class: 'btn btn--ghost btn--small' }, '✕');
+  closeBtn.addEventListener('click', () => {
+    if (confirm('Sessie verlaten zonder op te slaan?')) app.abandonSession();
+  });
+
+  const titleEl = el('h2', { class: 'screen-title' }, game?.name ?? 'Scoreboard');
+
+  const undoBtn = el('button', { class: 'btn btn--ghost btn--small' }, '↩');
   undoBtn.title = 'Laatste ronde ongedaan maken';
-  undoBtn.className = 'btn btn--ghost btn--small';
   undoBtn.disabled = roundCount === 0;
   undoBtn.addEventListener('click', () => {
     if (confirm('Laatste ronde ongedaan maken?')) app.undoLastRound();
   });
 
+  const roundCounter = el('span', { class: 'round-counter' }, `Ronde ${roundCount + 1}`);
+
   const header = el('div', { class: 'screen-header' },
-    createButton('✕', 'ghost', () => {
-      if (confirm('Sessie verlaten zonder op te slaan?')) {
-        app.abandonSession();
-      }
-    }),
-    el('h2', { class: 'screen-title' }, game?.name ?? 'Scoreboard'),
+    closeBtn,
+    titleEl,
+    roundCounter,
     undoBtn,
   );
   screen.appendChild(header);
 
-  // Score table — sorted by score ascending (lower is better in penalty games)
+  // ── Player order & leader detection ───────────────────────────────────────
   const sortedPlayers = active.playerIds
     .map(pid => ({ player: players.find(p => p.id === pid), score: active.scores[pid] ?? 0 }))
-    .filter(x => x.player)
-    .sort((a, b) => a.score - b.score);
+    .filter(x => x.player);
 
-  const table = el('div', { class: 'score-table' });
-  const scoreRowWraps = {};
+  const minScore = Math.min(...sortedPlayers.map(x => x.score));
+
+  // ── Pending deltas (points to add this round) ──────────────────────────────
+  const pendingDeltas = {};
+  for (const { player } of sortedPlayers) pendingDeltas[player.id] = 0;
+
+  // ── Zone 1: Tussenstand label ─────────────────────────────────────────────
+  screen.appendChild(el('div', { class: 'zone-label' }, 'Tussenstand'));
+
+  // ── Player card grid ──────────────────────────────────────────────────────
+  const grid = el('div', { class: 'player-grid' });
+  const pendingEls = {};
 
   sortedPlayers.forEach(({ player, score }, i) => {
     const isPelt = game && score >= game.peltThreshold;
-    const progress = game ? Math.min(score / game.losingScore, 1) : 0;
+    const isLeader = score === minScore;
+    const suit = getSuitForIndex(i);
 
-    const scoreValueEl = el('div', { class: 'score-value' }, String(score));
-    const avatarStyle = player.color && !isPelt ? `background:${player.color};color:#0f0f13` : '';
+    function makePip() {
+      const corner = document.createElement('div');
+      corner.className = 'card-corner';
+      const initial = document.createElement('div');
+      initial.textContent = player.name.charAt(0).toUpperCase();
+      const suitEl = document.createElement('div');
+      suitEl.className = `card-corner-suit ${suit.cls}`;
+      suitEl.textContent = suit.char;
+      corner.appendChild(initial);
+      corner.appendChild(suitEl);
+      return corner;
+    }
 
-    const row = el('div', { class: `score-row ${isPelt ? 'score-row--pelt' : ''}` },
-      el('div', { class: 'score-row-left' },
-        el('div', { class: 'score-avatar', style: avatarStyle }, player.name.charAt(0).toUpperCase()),
-        el('div', { class: 'score-player-info' },
-          el('div', { class: 'score-player-name' }, player.name),
-          isPelt ? el('div', { class: 'pelt-badge' }, '⚠️ PELT') : null,
-        ),
-      ),
-      scoreValueEl,
+    const pipTL = makePip();
+    pipTL.classList.add('card-corner--tl');
+
+    const pipBR = makePip();
+    pipBR.classList.add('card-corner--br');
+
+    const starEl = el('span', { class: 'card-leader-star' }, '★');
+
+    const scoreEl = el('div', { class: 'card-score' }, String(score));
+    const nameEl = el('div', { class: 'card-name' }, player.name);
+
+    const livesEl = document.createElement('div');
+    livesEl.className = 'card-lives';
+    livesEl.innerHTML = buildLivesHtml(score, game?.losingScore);
+
+    const pendingBadge = el('div', { class: 'card-pending' }, '');
+    pendingEls[player.id] = pendingBadge;
+
+    const scoreWrap = el('div', { class: 'card-score-wrap' }, scoreEl, nameEl, livesEl);
+
+    let cardClass = 'player-card-felt';
+    if (isPelt) cardClass += ' player-card-felt--pelt';
+    else if (isLeader) cardClass += ' player-card-felt--leader';
+
+    const card = el('div', { class: cardClass },
+      pipTL,
+      isLeader ? starEl : null,
+      pendingBadge,
+      scoreWrap,
+      pipBR,
     );
 
-    const bar = el('div', { class: 'score-progress-bar' },
-      el('div', {
-        class: `score-progress-fill ${isPelt ? 'score-progress-fill--pelt' : ''}`,
-        style: `width: ${Math.round(progress * 100)}%`,
-      }),
-    );
-    const rowWrap = el('div', {
-      class: 'score-row-wrap',
-      style: `animation-delay: ${i * 50}ms`,
-    }, row, bar);
-    rowWrap.classList.add('score-row-enter');
-    scoreRowWraps[player.id] = { wrap: rowWrap, scoreEl: scoreValueEl };
-    table.appendChild(rowWrap);
-
-    // Show delta badge if we just came from a round submission
     if (prevScores && prevScores[player.id] !== undefined) {
       const delta = score - prevScores[player.id];
       if (delta !== 0) {
-        requestAnimationFrame(() => showDelta(scoreValueEl, delta));
+        requestAnimationFrame(() => showDelta(scoreEl, delta));
       }
+    }
+
+    grid.appendChild(card);
+  });
+
+  screen.appendChild(grid);
+
+  // ── Zone 2: Scheidingslijn ────────────────────────────────────────────────
+  const divider = el('div', { class: 'round-divider' },
+    el('span', { class: 'round-divider-label' }, 'Punten deze ronde'),
+  );
+  screen.appendChild(divider);
+
+  // ── Zone 2: Scoreinvoer met pill-controls ─────────────────────────────────
+  const inputZone = el('div', { class: 'score-input-zone' });
+  const pillValueEls = {};
+
+  sortedPlayers.forEach(({ player }, i) => {
+    const suit = getSuitForIndex(i);
+
+    const suitEl = el('span', { class: `pill-suit ${suit.cls}` }, suit.char);
+    const nameEl = el('span', { class: 'pill-name' }, player.name);
+    const pillPlayer = el('div', { class: 'pill-player' }, suitEl, nameEl);
+
+    const minusBtn = el('button', { class: 'pill-btn pill-btn--minus' }, '−');
+    const valueEl = el('span', { class: 'pill-value' }, '0');
+    const plusBtn = el('button', { class: 'pill-btn pill-btn--plus' }, '+');
+
+    pillValueEls[player.id] = valueEl;
+
+    function updatePill() {
+      const v = pendingDeltas[player.id];
+      valueEl.textContent = (v > 0 ? '+' : '') + v;
+      // also sync pending badge on card
+      const badge = pendingEls[player.id];
+      if (badge) {
+        badge.textContent = (v > 0 ? '+' : '') + v;
+        badge.className = 'card-pending' + (v > 0 ? ' card-pending--pos' : v < 0 ? ' card-pending--neg' : '');
+      }
+    }
+
+    minusBtn.addEventListener('click', () => {
+      pendingDeltas[player.id] = Math.max(-99, pendingDeltas[player.id] - 1);
+      updatePill();
+      showScoreFlash(-1);
+    });
+
+    plusBtn.addEventListener('click', () => {
+      pendingDeltas[player.id] = Math.min(99, pendingDeltas[player.id] + 1);
+      updatePill();
+      showScoreFlash(+1);
+    });
+
+    const pillControl = el('div', { class: 'pill-control' }, minusBtn, valueEl, plusBtn);
+    const pillRow = el('div', { class: 'pill-row' }, pillPlayer, pillControl);
+    inputZone.appendChild(pillRow);
+  });
+
+  screen.appendChild(inputZone);
+
+  // ── Footer: actieknoppen ──────────────────────────────────────────────────
+  const resetBtn = el('button', { class: 'btn--felt' }, 'Wis invoer');
+  const confirmBtn = el('button', { class: 'btn--felt btn--felt-primary' }, 'Bevestigen ✓');
+
+  resetBtn.addEventListener('click', () => {
+    for (const pid of Object.keys(pendingDeltas)) pendingDeltas[pid] = 0;
+    for (const pid of Object.keys(pillValueEls)) {
+      pillValueEls[pid].textContent = '0';
+    }
+    for (const pid of Object.keys(pendingEls)) {
+      pendingEls[pid].textContent = '';
+      pendingEls[pid].className = 'card-pending';
     }
   });
 
-  screen.appendChild(table);
+  confirmBtn.addEventListener('click', () => {
+    const entries = [];
+    for (const { player } of sortedPlayers) {
+      const points = pendingDeltas[player.id] ?? 0;
+      if (game && !isValidPoints(points, game)) {
+        showToast(`Ongeldige puntwaarde voor ${player.name}`, 'error');
+        return;
+      }
+      entries.push({ playerId: player.id, points });
+    }
+    confirmBtn.disabled = true;
+    app.submitRound(entries, active.scores);
+  });
 
-  if (game) {
-    screen.appendChild(
-      el('div', { class: 'losing-score-hint' }, `Verloren bij ${game.losingScore} punten`)
-    );
-  }
+  screen.appendChild(el('div', { class: 'scoreboard-actions' }, resetBtn, confirmBtn));
 
-  // Round history (collapsible)
+  // ── Round history (collapsible) ───────────────────────────────────────────
   const rounds = active.rounds ?? [];
   if (rounds.length > 0) {
     const historySection = el('div', { class: 'round-history' });
@@ -108,18 +246,12 @@ function renderScoreboard({ app, prevScores }) {
     const headerRow = el('div', { class: 'history-header-row' },
       el('div', { class: 'history-cell history-cell--round' }, '#'),
       ...sortedPlayers.map(({ player }) =>
-        el('div', { class: 'history-cell', style: player.color ? `color:${player.color}` : '' }, player.name)
+        el('div', { class: 'history-cell' }, player.name)
       ),
     );
     historyBody.appendChild(headerRow);
 
-    const runningTotals = {};
-    for (const { player } of sortedPlayers) runningTotals[player.id] = 0;
-
     rounds.forEach((round, idx) => {
-      for (const entry of round.entries) {
-        runningTotals[entry.playerId] = (runningTotals[entry.playerId] ?? 0) + entry.points;
-      }
       const row = el('div', { class: 'history-row' },
         el('div', { class: 'history-cell history-cell--round' }, String(idx + 1)),
         ...sortedPlayers.map(({ player }) => {
@@ -144,122 +276,5 @@ function renderScoreboard({ app, prevScores }) {
     screen.appendChild(historySection);
   }
 
-  // Round input form
-  screen.appendChild(el('h3', { class: 'section-label' }, '➕ Ronde invoeren'));
-
-  const form = el('div', { class: 'round-form card' });
-
-  // Per-player stepper rows
-  const pointValues = {};
-  for (const { player } of sortedPlayers) {
-    pointValues[player.id] = 0;
-  }
-
-  const stepperList = el('div', { class: 'stepper-list' });
-
-  for (const { player } of sortedPlayers) {
-    const inputEl = el('input', {
-      class: 'stepper-input',
-      type: 'number',
-      min: '-99',
-      max: '99',
-      value: '0',
-    });
-
-    inputEl.addEventListener('input', () => {
-      const v = parseInt(inputEl.value, 10);
-      pointValues[player.id] = isNaN(v) ? 0 : v;
-      updateRowHighlight(stepperRow, pointValues[player.id]);
-    });
-
-    inputEl.addEventListener('blur', () => {
-      if (inputEl.value === '' || isNaN(parseInt(inputEl.value, 10))) {
-        inputEl.value = '0';
-        pointValues[player.id] = 0;
-        updateRowHighlight(stepperRow, 0);
-      }
-    });
-
-    const minusBtn = el('button', { class: 'stepper-btn stepper-btn--minus' }, '−');
-    const plusBtn = el('button', { class: 'stepper-btn stepper-btn--plus' }, '+');
-
-    minusBtn.addEventListener('click', () => {
-      const cur = pointValues[player.id] ?? 0;
-      const next = Math.max(-99, cur - 1);
-      pointValues[player.id] = next;
-      inputEl.value = String(next);
-      updateRowHighlight(stepperRow, next);
-    });
-
-    plusBtn.addEventListener('click', () => {
-      const cur = pointValues[player.id] ?? 0;
-      const next = Math.min(99, cur + 1);
-      pointValues[player.id] = next;
-      inputEl.value = String(next);
-      updateRowHighlight(stepperRow, next);
-    });
-
-    const stepperAvatarStyle = player.color ? `background:${player.color};color:#0f0f13` : '';
-    const stepperRow = el('div', { class: 'stepper-row' },
-      el('div', { class: 'stepper-player' },
-        el('div', { class: 'stepper-avatar', style: stepperAvatarStyle }, player.name.charAt(0).toUpperCase()),
-        el('span', { class: 'stepper-name' }, player.name),
-      ),
-      el('div', { class: 'stepper-controls' },
-        minusBtn,
-        inputEl,
-        plusBtn,
-      ),
-    );
-
-    stepperList.appendChild(stepperRow);
-  }
-
-  form.appendChild(stepperList);
-
-  const submitBtn = createButton('✓ Ronde Bevestigen', 'primary');
-  submitBtn.className = 'btn btn--primary btn--large';
-
-  submitBtn.addEventListener('click', () => {
-    const entries = [];
-    for (const { player } of sortedPlayers) {
-      const points = pointValues[player.id] ?? 0;
-      if (game && !isValidPoints(points, game)) {
-        showToast(`Ongeldige puntwaarde voor ${player.name}`, 'error');
-        return;
-      }
-      entries.push({ playerId: player.id, points });
-    }
-
-    const hasAnyNonZero = entries.some(e => e !== 0);
-    // Allow all-zero round (e.g. everyone tied), just submit as-is
-    animateSubmitBtn(submitBtn);
-    app.submitRound(entries, active.scores);
-  });
-
-  form.appendChild(submitBtn);
-  screen.appendChild(form);
-
-  screen.appendChild(
-    el('div', { class: 'round-count' }, `Ronde ${roundCount + 1}`)
-  );
-
   return screen;
-}
-
-function updateRowHighlight(row, value) {
-  if (value > 0) {
-    row.classList.add('stepper-row--positive');
-    row.classList.remove('stepper-row--negative');
-  } else if (value < 0) {
-    row.classList.add('stepper-row--negative');
-    row.classList.remove('stepper-row--positive');
-  } else {
-    row.classList.remove('stepper-row--positive', 'stepper-row--negative');
-  }
-}
-
-function animateSubmitBtn(btn) {
-  btn.classList.add('btn--confirm-pulse');
-  btn.addEventListener('animationend', () => btn.classList.remove('btn--confirm-pulse'), { once: true });
 }
