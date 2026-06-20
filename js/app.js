@@ -70,6 +70,7 @@ export function endSession(losers) {
   for (const pid of activeSession.playerIds) {
     const player = players.find(p => p.id === pid);
     if (!player) continue;
+    if (!player.stats) player.stats = { gamesPlayed: 0, gamesLost: 0 };
     player.stats.gamesPlayed = (player.stats.gamesPlayed ?? 0) + 1;
     if (losers.includes(pid)) {
       player.stats.gamesLost = (player.stats.gamesLost ?? 0) + 1;

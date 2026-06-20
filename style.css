@@ -974,3 +974,7 @@ input[type=number]::-webkit-outer-spin-button {
   -webkit-appearance: none;
 }
 input[type=number] { -moz-appearance: textfield; }
+
+/* ── Missing layout helpers ────────────────────────────────────────────────── */
+.score-player-info { display: flex; flex-direction: column; gap: 4px; }
+.player-details { display: flex; flex-direction: column; gap: 2px; }

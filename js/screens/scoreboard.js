@@ -122,6 +122,7 @@ function renderScoreboard({ app }) {
 
   submitBtn.addEventListener('click', () => {
     const pointsInput = form.querySelector('#points-input');
+    if (!pointsInput) { showToast('Formulier fout', 'error'); return; }
     const raw = pointsInput.value.trim();
     const points = parseInt(raw, 10);
 
