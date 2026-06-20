@@ -390,7 +390,7 @@ h3 { font-size: 1.1rem; font-weight: 600; }
 .nav-card:hover { background: rgba(255,255,255,0.24); }
 
 .nav-card-icon { font-size: 2rem; }
-.nav-card-title { font-weight: 700; font-size: 0.95rem; }
+.nav-card-title { font-weight: 700; font-size: 0.95rem; color: var(--accent); }
 .nav-card-desc { color: var(--text-muted); font-size: 0.75rem; }
 
 /* ── Players screen ────────────────────────────────────────────────────────── */
@@ -479,6 +479,7 @@ h3 { font-size: 1.1rem; font-weight: 600; }
 
 .text-input {
   flex: 1;
+  width: 100%;
   background: var(--surface-2);
   color: var(--text);
   border: 1px solid rgba(255,255,255,0.12);
@@ -586,6 +587,7 @@ h3 { font-size: 1.1rem; font-weight: 600; }
   flex: 1;
   font-weight: 600;
   font-size: 1rem;
+  color: var(--text);
 }
 
 .player-select-check {
